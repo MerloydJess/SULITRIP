@@ -2,6 +2,7 @@
 
 package com.example.sulitrip
 
+import android.annotation.SuppressLint
 import android.location.Geocoder
 import android.os.Bundle
 import android.preference.PreferenceManager
@@ -9,6 +10,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.sulitrip.R.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.osmdroid.api.IMapController
@@ -20,6 +22,11 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import java.util.Locale
 import kotlin.concurrent.thread
+import com.google.android.material.appbar.MaterialToolbar
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MapActivity : AppCompatActivity() {
 
@@ -32,9 +39,14 @@ class MapActivity : AppCompatActivity() {
     private var currentMarker: Marker? = null
     private var currentLocation: GeoPoint? = null
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.mapview)
+        setContentView(layout.mapview)
+
+        val toolbar: MaterialToolbar = findViewById(id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         // Initialize OSMDroid configuration
         Configuration.getInstance().load(
@@ -42,10 +54,9 @@ class MapActivity : AppCompatActivity() {
             PreferenceManager.getDefaultSharedPreferences(applicationContext)
         )
 
-        // Initialize map view
-        map = findViewById(R.id.map)
+        // Initialize MapView and components
+        map = findViewById(id.map)
         map.setTileSource(TileSourceFactory.MAPNIK)
-        map.setBuiltInZoomControls(true)
         map.setMultiTouchControls(true)
 
         // Set map controller
@@ -54,10 +65,10 @@ class MapActivity : AppCompatActivity() {
         mapController.setCenter(GeoPoint(16.4023, 120.5960)) // Default center: Baguio City
 
         // Initialize UI components
-        searchBar = findViewById(R.id.searchBar)
-        searchButton = findViewById(R.id.searchButton)
-        saveLocationButton = findViewById(R.id.saveLocationButton)
-        saveLocationButton.visibility = Button.GONE // Initially hide save button
+        searchBar = findViewById(id.searchBar)
+        searchButton = findViewById(id.searchButton)
+        saveLocationButton = findViewById(id.saveLocationButton)
+        saveLocationButton.visibility = Button.GONE // Initially hide the save button
 
         // Add location overlay
         locationOverlay = MyLocationNewOverlay(map)
@@ -68,8 +79,28 @@ class MapActivity : AppCompatActivity() {
         searchButton.setOnClickListener { searchLocation() }
         saveLocationButton.setOnClickListener { saveCurrentLocationToFirestore() }
 
-        // Fetch predefined markers
+        // Fetch predefined markers for tourist spots and jeep terminals
         fetchAndDisplayMarkers()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        map.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        map.onDetach()
     }
 
     private fun fetchAndDisplayMarkers() {
@@ -142,11 +173,12 @@ class MapActivity : AppCompatActivity() {
         val userId = user?.uid ?: return
 
         currentLocation?.let { location ->
+            val distance = calculateDistance(locationOverlay.myLocation, location)
             val locationData = mapOf(
                 "name" to (currentMarker?.title ?: "Unknown"),
                 "latitude" to location.latitude,
                 "longitude" to location.longitude,
-                "distance" to 0.0 // Placeholder for distance
+                "distance" to distance
             )
 
             db.collection("users")
@@ -155,11 +187,25 @@ class MapActivity : AppCompatActivity() {
                 .add(locationData)
                 .addOnSuccessListener {
                     Toast.makeText(this, "Location saved!", Toast.LENGTH_SHORT).show()
-                    saveLocationButton.visibility = Button.GONE // Hide after saving
+                    saveLocationButton.visibility = Button.GONE
                 }
                 .addOnFailureListener {
                     Toast.makeText(this, "Failed to save location.", Toast.LENGTH_SHORT).show()
                 }
         } ?: Toast.makeText(this, "No location to save.", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun calculateDistance(start: GeoPoint?, end: GeoPoint?): Double {
+        if (start == null || end == null) return 0.0
+        val radius = 6371.0 // Earth's radius in km
+        val dLat = Math.toRadians(end.latitude - start.latitude)
+        val dLon = Math.toRadians(end.longitude - start.longitude)
+
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(start.latitude)) * cos(Math.toRadians(end.latitude)) *
+                sin(dLon / 2) * sin(dLon / 2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return radius * c
     }
 }

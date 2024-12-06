@@ -8,4 +8,11 @@
     <string name="hint_enter_location">Enter location</string>
     <string name="content_description_search_bar">Search input field</string>
     <string name="button_search">Search</string>
+    <string name="save_location_button">Save location button</string>
+    <string name="search_location">Search location</string>
+    <string name="search_location_input">Search location input</string>
+    <string name="search">Search</string>
+    <string name="map_view_for_location_display">Map view for location display</string>
+    <string name="search_button">Search button</string>
+    <string name="save_location">Save Location</string>
 </resources>

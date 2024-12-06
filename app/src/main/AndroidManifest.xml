@@ -20,7 +20,8 @@
         android:requestLegacyExternalStorage="true">
 
         <!-- Declare activities -->
-        <activity android:name=".MapActivity" />
+        <activity android:name=".MapActivity"
+            android:theme="@style/Theme.SULITRIP"/>
         <activity android:name=".LoginActivity" />
         <activity android:name=".RegisterActivity" />
         <activity android:name=".MainActivity"

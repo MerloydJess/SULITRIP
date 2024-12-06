@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sulitrip.ui.theme.SavedDestinationsAdapter
 import org.osmdroid.api.IMapController
+import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -36,6 +37,8 @@ class SearchActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.searchbar)
 
+        Configuration.getInstance().load(applicationContext, androidx.preference.PreferenceManager.getDefaultSharedPreferences(applicationContext))
+
         map = findViewById(R.id.map)
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
@@ -48,9 +51,7 @@ class SearchActivity : AppCompatActivity() {
         searchRecyclerView.layoutManager = LinearLayoutManager(this)
 
         val searchButton = findViewById<Button>(R.id.searchButton)
-        searchButton.setOnClickListener {
-            searchLocation()
-        }
+        searchButton.setOnClickListener { searchLocation() }
 
         fetchRecentSearches()
     }
@@ -69,12 +70,8 @@ class SearchActivity : AppCompatActivity() {
     private fun updateSearchRecyclerView() {
         searchRecyclerView.adapter = SavedDestinationsAdapter(
             destinations = searchResults,
-            onClick = { destination ->
-                moveToLocation(destination)
-            },
-            onDelete = { destination, position ->
-                deleteDestination(destination, position)
-            }
+            onClick = { destination -> moveToLocation(destination) },
+            onDelete = { destination, position -> deleteDestination(destination, position) }
         )
     }
 
@@ -113,7 +110,9 @@ class SearchActivity : AppCompatActivity() {
         thread {
             try {
                 val geocoder = Geocoder(this, Locale.getDefault())
-                val addresses: List<Address> = geocoder.getFromLocationName(locationName, 1) ?: emptyList()
+                val addresses: List<Address> = geocoder.getFromLocationName(/* locationName = */
+                    locationName, /* maxResults = */
+                    1) ?: emptyList()
 
                 if (addresses.isNotEmpty()) {
                     val address = addresses[0]
@@ -141,20 +140,17 @@ class SearchActivity : AppCompatActivity() {
                         Toast.makeText(this, "$locationName added to results", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    runOnUiThread {
-                        Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show()
-                    }
+                    runOnUiThread { Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show() }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                runOnUiThread {
-                    Toast.makeText(this, "Error searching location", Toast.LENGTH_SHORT).show()
-                }
+                runOnUiThread { Toast.makeText(this, "Error searching location", Toast.LENGTH_SHORT).show() }
             }
         }
     }
 
-    private fun calculateDistance(start: GeoPoint, end: GeoPoint): Double {
+    private fun calculateDistance(start: GeoPoint?, end: GeoPoint?): Double {
+        if (start == null || end == null) return 0.0
         val radius = 6371.0
         val dLat = Math.toRadians(end.latitude - start.latitude)
         val dLon = Math.toRadians(end.longitude - start.longitude)
@@ -165,5 +161,20 @@ class SearchActivity : AppCompatActivity() {
 
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         return radius * c
+    }
+
+    override fun onResume() {
+        super.onResume()
+        map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        map.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        map.onDetach()
     }
 }
