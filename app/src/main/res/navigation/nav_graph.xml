@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/HomeFragment">
+
+    <!-- Home Fragment -->
+    <fragment
+        android:id="@+id/HomeFragment"
+        android:name="com.example.sulitrip.ui.theme.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <!-- Map Fragment -->
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.sulitrip.ui.theme.MapFragment"
+        android:label="Map"
+        tools:layout="@layout/fragment_map" />
+
+    <!-- Saved Destinations Fragment -->
+    <fragment
+        android:id="@+id/savedDestinationsFragment"
+        android:name="com.example.sulitrip.ui.theme.SavedDestinationsFragment"
+        android:label="Saved Destinations"
+        tools:layout="@layout/fragment_saved_destinations" />
+</navigation>
