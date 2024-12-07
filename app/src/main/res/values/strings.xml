@@ -15,4 +15,9 @@
     <string name="map_view_for_location_display">Map view for location display</string>
     <string name="search_button">Search button</string>
     <string name="save_location">Save Location</string>
+    <string name="openstreetmap_view">OpenStreetMap View</string>
+    <string name="save_location_button_description" />
+    <string name="map_view_description">String</string>
+    <string name="search_button_description">String</string>
+    <string name="search_bar_description">String</string>
 </resources>

@@ -5,16 +5,14 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
@@ -26,11 +24,11 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-                // Initialize FirebaseAuth
-                auth = FirebaseAuth.getInstance()
+        // Initialize FirebaseAuth
+        auth = FirebaseAuth.getInstance()
 
-                // Set Compose content
-                setContent {
+        // Set Compose content
+        setContent {
             LoginScreen(
                 onRegisterClicked = { goToRegisterActivity() },
                 loginUser = { email, password -> loginUser(email, password) }
@@ -66,23 +64,37 @@ class LoginActivity : ComponentActivity() {
      * Logs in the user using Firebase Authentication.
      */
     private fun loginUser(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            showToast("Please fill out all fields.")
+        val trimmedEmail = email.trim()
+
+        // Custom email validation
+        val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        if (!trimmedEmail.matches(Regex(emailRegex))) {
+            showToast("Invalid email format.")
             return
         }
 
-        auth.signInWithEmailAndPassword(email, password)
+        if (password.isBlank()) {
+            showToast("Password cannot be empty.")
+            return
+        }
+
+        auth.signInWithEmailAndPassword(trimmedEmail, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Login successful
+                    showToast("Login successful!")
                     goToMapActivity()
                 } else {
                     // Login failed
-                    showToast("Authentication failed: ${task.exception?.message}")
+                    val errorMessage = task.exception?.message ?: "Login failed."
+                    showToast(errorMessage)
                 }
             }
     }
+
 }
+
+annotation class RegisterActivity
 
 @Composable
 fun LoginScreen(onRegisterClicked: () -> Unit, loginUser: (String, String) -> Unit) {
@@ -104,67 +116,30 @@ fun LoginScreen(onRegisterClicked: () -> Unit, loginUser: (String, String) -> Un
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Email Text Field
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.Gray.copy(alpha = 0.1f))
-        ) {
-            BasicTextField(
-                value = emailState.value,
-                onValueChange = { emailState.value = it },
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        innerTextField()
-                        if (emailState.value.isEmpty()) {
-                            Text(
-                                "Email",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-            )
-        }
-
+        // Email Outlined Text Field
+        OutlinedTextField(
+            value = emailState.value,
+            onValueChange = { emailState.value = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Password Text Field
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.Gray.copy(alpha = 0.1f))
-        ) {
-            BasicTextField(
-                value = passwordState.value,
-                onValueChange = { passwordState.value = it },
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        innerTextField()
-                        if (passwordState.value.isEmpty()) {
-                            Text(
-                                "Password",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-            )
-        }
-
+        // Password Outlined Text Field
+        OutlinedTextField(
+            value = passwordState.value,
+            onValueChange = { passwordState.value = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation()
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         // Login Button
         Button(
             onClick = {
                 isLoading.value = true
-                loginUser(emailState.value, passwordState.value) // Trigger login logic
+                loginUser(emailState.value, passwordState.value)
                 isLoading.value = false
             },
             modifier = Modifier
