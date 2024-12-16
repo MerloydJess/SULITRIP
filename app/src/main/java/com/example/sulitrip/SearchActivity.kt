@@ -1,7 +1,5 @@
 package com.example.sulitrip
 
-import android.location.Address
-import android.location.Geocoder
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -10,20 +8,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sulitrip.ui.theme.SavedDestinationsAdapter
+import org.json.JSONArray
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import java.util.Locale
+import java.net.URL
 import kotlin.concurrent.thread
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-@Suppress("DEPRECATION")
 class SearchActivity : AppCompatActivity() {
 
     private lateinit var map: MapView
@@ -101,7 +99,7 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun searchLocation() {
-        val locationName = searchInput.text.toString()
+        val locationName = searchInput.text.toString().trim()
         if (locationName.isBlank()) {
             Toast.makeText(this, "Please enter a location", Toast.LENGTH_SHORT).show()
             return
@@ -109,48 +107,62 @@ class SearchActivity : AppCompatActivity() {
 
         thread {
             try {
-                val geocoder = Geocoder(this, Locale.getDefault())
-                val addresses: List<Address> = geocoder.getFromLocationName(/* locationName = */
-                    locationName, /* maxResults = */
-                    1) ?: emptyList()
+                val query = locationName.replace(" ", "+")
+                val url = "https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1"
 
-                if (addresses.isNotEmpty()) {
-                    val address = addresses[0]
-                    val lat = address.latitude
-                    val lon = address.longitude
+                val result = URL(url).readText()
+                val locations = JSONArray(result)
+
+                if (locations.length() > 0) {
+                    val location = locations.getJSONObject(0)
+                    val lat = location.getDouble("lat")
+                    val lon = location.getDouble("lon")
+                    val displayName = location.getString("display_name")
+
                     val geoPoint = GeoPoint(lat, lon)
 
                     runOnUiThread {
                         mapController.setCenter(geoPoint)
+                        addMarker(geoPoint, displayName)
 
-                        val marker = Marker(map)
-                        marker.position = geoPoint
-                        marker.title = locationName
-                        map.overlays.add(marker)
+                        val distance = calculateDistance(
+                            GeoPoint(16.4023, 120.5960),
+                            geoPoint
+                        )
 
-                        val result = mapOf(
-                            "name" to locationName,
+                        val resultMap = mapOf(
+                            "name" to displayName,
                             "latitude" to lat,
                             "longitude" to lon,
-                            "distance" to calculateDistance(GeoPoint(16.4023, 120.5960), geoPoint)
+                            "distance" to distance
                         )
-                        searchResults.add(result)
+                        searchResults.add(resultMap)
                         updateSearchRecyclerView()
 
-                        Toast.makeText(this, "$locationName added to results", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "$displayName added to results", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    runOnUiThread { Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show() }
+                    runOnUiThread {
+                        Toast.makeText(this, "No results found", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                runOnUiThread { Toast.makeText(this, "Error searching location", Toast.LENGTH_SHORT).show() }
+                runOnUiThread {
+                    Toast.makeText(this, "Error searching location: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
-    private fun calculateDistance(start: GeoPoint?, end: GeoPoint?): Double {
-        if (start == null || end == null) return 0.0
+    private fun addMarker(geoPoint: GeoPoint, title: String) {
+        val marker = Marker(map)
+        marker.position = geoPoint
+        marker.title = title
+        map.overlays.add(marker)
+    }
+
+    private fun calculateDistance(start: GeoPoint, end: GeoPoint): Double {
         val radius = 6371.0
         val dLat = Math.toRadians(end.latitude - start.latitude)
         val dLon = Math.toRadians(end.longitude - start.longitude)

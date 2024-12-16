@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.sulitrip.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import org.osmdroid.util.GeoPoint
 
 class SavedDestinationsFragment : Fragment(R.layout.fragment_saved_destinations) {
 
@@ -31,7 +32,6 @@ class SavedDestinationsFragment : Fragment(R.layout.fragment_saved_destinations)
         recyclerView = view.findViewById(R.id.savedDestinationsRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Initialize the adapter with empty data
         adapter = SavedDestinationsAdapter(
             destinations,
             onClick = { destination -> navigateToDestination(destination) },
@@ -39,7 +39,6 @@ class SavedDestinationsFragment : Fragment(R.layout.fragment_saved_destinations)
         )
         recyclerView.adapter = adapter
 
-        // Fetch saved destinations from Firestore
         fetchSavedDestinations()
     }
 
@@ -59,14 +58,28 @@ class SavedDestinationsFragment : Fragment(R.layout.fragment_saved_destinations)
             .addOnSuccessListener { result ->
                 destinations.clear()
                 for (document in result) {
-                    val destinationData = document.data.toMutableMap()
-                    destinationData["id"] = document.id
-                    destinations.add(destinationData)
+                    val data = document.data
+                    val name = data["name"] as? String
+                    val lat = data["latitude"] as? Double
+                    val lon = data["longitude"] as? Double
+
+                    if (name != null && lat != null && lon != null) {
+                        destinations.add(
+                            mapOf(
+                                "id" to document.id,
+                                "name" to name,
+                                "latitude" to lat,
+                                "longitude" to lon
+                            )
+                        )
+                    } else {
+                        Toast.makeText(requireContext(), "Invalid location data skipped", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                this.adapter.notifyDataSetChanged()
+                adapter.notifyDataSetChanged()
             }
-            .addOnFailureListener { exception ->
-                Toast.makeText(requireContext(), "Failed to load destinations: ${exception.message}", Toast.LENGTH_SHORT).show()
+            .addOnFailureListener { e ->
+                Toast.makeText(requireContext(), "Failed to load destinations: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -108,7 +121,7 @@ class SavedDestinationsFragment : Fragment(R.layout.fragment_saved_destinations)
             return
         }
 
-        // Replace with navigation logic or open a map activity
-        Toast.makeText(requireContext(), "Navigating to $destinationName ($latitude, $longitude)", Toast.LENGTH_SHORT).show()
+        GeoPoint(latitude, longitude)
+        Toast.makeText(requireContext(), "Navigating to $destinationName", Toast.LENGTH_SHORT).show()
     }
 }

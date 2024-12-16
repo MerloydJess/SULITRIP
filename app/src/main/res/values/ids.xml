@@ -2,4 +2,8 @@
 <resources>
     <item name="destinationDistance" type="id" />
     <item name="savedLocationsButton" type="id" />
+    <item name="destinationName" type="id" />
+    <item name="deleteButton" type="id" />
+    <item name="loadingIndicator" type="id" />
+    <item name="savedDestinationsRecyclerView" type="id" />
 </resources>

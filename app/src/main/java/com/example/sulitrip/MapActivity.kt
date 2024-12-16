@@ -21,10 +21,6 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import java.util.Locale
 import kotlin.concurrent.thread
 
-class SavedDestinationsActivity {
-
-}
-
 @Suppress("DEPRECATION")
 class MapActivity : AppCompatActivity() {
 
@@ -33,15 +29,12 @@ class MapActivity : AppCompatActivity() {
     private lateinit var searchBar: EditText
     private lateinit var searchButton: Button
     private lateinit var saveLocationButton: Button
+    private lateinit var savedLocationsButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.mapview)
 
-        // Initialize the button
-        var savedLocationsButton = findViewById(R.id.savedLocationsButton)
-        savedLocationsButton.setOnClickListener {
-            navigateToSavedDestinations()
         // Initialize OSMDroid
         Configuration.getInstance().load(
             applicationContext,
@@ -54,14 +47,15 @@ class MapActivity : AppCompatActivity() {
         searchBar = findViewById(R.id.searchBar)
         searchButton = findViewById(R.id.searchButton)
         saveLocationButton = findViewById(R.id.saveLocationButton)
+        savedLocationsButton = findViewById(R.id.savedLocationsButton)
 
-        // Map Configuration
+        // Configure Map
         map.setMultiTouchControls(true)
         mapController = map.controller
         mapController.setZoom(15.0)
-        mapController.setCenter(GeoPoint(16.4023, 120.5960)) // Default: Baguio City
+        mapController.setCenter(GeoPoint(16.4023, 120.5960)) // Default center: Baguio City
 
-        // Add User Location
+        // Add User Location Overlay
         val locationOverlay = MyLocationNewOverlay(map)
         locationOverlay.enableMyLocation()
         map.overlays.add(locationOverlay)
@@ -69,6 +63,7 @@ class MapActivity : AppCompatActivity() {
         // Button Listeners
         searchButton.setOnClickListener { searchLocation() }
         saveLocationButton.setOnClickListener { saveLocation() }
+        savedLocationsButton.setOnClickListener { navigateToSavedDestinations() }
 
         // Request permissions
         checkPermissions()
@@ -120,24 +115,29 @@ class MapActivity : AppCompatActivity() {
 
         val db = FirebaseFirestore.getInstance()
         val user = FirebaseAuth.getInstance().currentUser
-        val userId = user?.uid ?: return
+
+        if (user == null) {
+            Toast.makeText(this, "Please log in to save locations", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         val locationData = mapOf(
             "name" to locationName,
             "latitude" to geoPoint.latitude,
-            "longitude" to geoPoint.longitude
+            "longitude" to geoPoint.longitude,
+            "timestamp" to System.currentTimeMillis()
         )
 
         db.collection("users")
-            .document(userId)
+            .document(user.uid)
             .collection("savedDestinations")
             .add(locationData)
             .addOnSuccessListener {
                 Toast.makeText(this, "Location saved!", Toast.LENGTH_SHORT).show()
                 saveLocationButton.visibility = Button.GONE
             }
-            .addOnFailureListener {
-                Toast.makeText(this, "Failed to save location", Toast.LENGTH_SHORT).show()
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to save location: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -162,10 +162,11 @@ class MapActivity : AppCompatActivity() {
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map.overlays.add(marker)
     }
-}
 
     private fun navigateToSavedDestinations() {
-        val intent = Intent(this, SavedDestinationsActivity::class.java)
+        val intent = Intent(this, SavedLocationActivity::class.java)
         startActivity(intent)
     }
+}
+
 

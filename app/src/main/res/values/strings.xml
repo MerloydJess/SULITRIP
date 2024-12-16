@@ -9,15 +9,20 @@
     <string name="content_description_search_bar">Search input field</string>
     <string name="button_search">Search</string>
     <string name="save_location_button">Save location button</string>
-    <string name="search_location">Search location</string>
+    <string name="search_location">Search for location</string>
     <string name="search_location_input">Search location input</string>
     <string name="search">Search</string>
     <string name="map_view_for_location_display">Map view for location display</string>
-    <string name="search_button">Search button</string>
+    <string name="search_button">Search</string>
     <string name="save_location">Save Location</string>
     <string name="openstreetmap_view">OpenStreetMap View</string>
-    <string name="save_location_button_description" />
-    <string name="map_view_description">String</string>
-    <string name="search_button_description">String</string>
-    <string name="search_bar_description">String</string>
+    <string name="save_location_button_description">Save location button description</string>
+    <string name="map_view_description">Map view for displaying locations</string>
+    <string name="search_button_description">Search button for locations</string>
+    <string name="search_bar_description">Input field for searching locations</string>
+    <string name="saved_locations">Saved Locations</string>
+    <string name="saved_locations_button_description">Button to open saved locations</string>
+    <string name="location_name">Location Name</string>
+    <string name="coordinates">Coordinates</string>
+
 </resources>

@@ -1,10 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="16dp"
-    android:text="Search Result"
-    android:textSize="16sp"
-    tools:ignore="HardcodedText" />
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Location Name -->
+    <TextView
+        android:id="@+id/locationName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Location Name"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        tools:ignore="HardcodedText" />
+
+    <!-- Coordinates or Distance -->
+    <TextView
+        android:id="@+id/locationInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Additional Info"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        tools:ignore="HardcodedText" />
+</LinearLayout>
